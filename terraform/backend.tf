@@ -1,9 +1,10 @@
-terraform {
+/*terraform {
   backend "s3" {
-    bucket         = "googleOnlineShop-terraform-state"
-    key            = "googleOnlineShop/terraform.tfstate"
+    bucket         = "google-online-shop-terraform-state"
+    key            = "google-online-shop/terraform.tfstate"
     region         = "us-east-1"
     encrypt        = true
     dynamodb_table = "terraform-state-lock"
   }
 }
+*/
