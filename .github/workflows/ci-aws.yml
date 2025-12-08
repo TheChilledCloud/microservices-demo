@@ -1,0 +1,140 @@
+
+name: Continuous Integration
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+permissions: read-all
+
+jobs:
+  setup_infra:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
+
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v6
+
+      - name: configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: '${{ secrets.AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.AWS_SECRET_ACCESS_KEY }}'
+          aws-region: '${{ secrets.AWS_REGION }}'
+
+      - name: setup terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: terraform init
+        run: terraform init
+
+      - name: terraform plan
+        run: terraform plan
+
+      - name: terraform apply
+        run: terraform apply -auto-approve
+
+  build_and_push:
+    name: 'Build & Push (${{ matrix.service }})'
+    needs: setup_infra
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - adservice
+          - cartservice
+          - checkoutservice
+          - currencyservice
+          - emailservice
+          - frontend
+          - paymentservice
+          - productcatalogservice
+          - recommendationservice
+          - shippingservice
+
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v6
+
+      - name: configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: '${{ secrets.AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.AWS_SECRET_ACCESS_KEY }}'
+          aws-region: '${{ secrets.AWS_REGION }}'
+
+      - name: login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Docker Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Define the Dockerfile directory. Most are directly in src/SERVICE
+          # Exception: cartservice has Dockerfile in src/cartservice/src/Dockerfile
+          CONTEXT_DIR="src/${{ matrix.service }}"
+          if [ "${{ matrix.service }}" == "cartservice" ]; then
+             CONTEXT_DIR="src/cartservice/src"
+          fi
+          
+          # Check if directory exists
+          if [ ! -d "$CONTEXT_DIR" ]; then
+            echo "Directory $CONTEXT_DIR not found!"
+            exit 1
+          fi
+
+          echo "Building ${{ matrix.service }} from $CONTEXT_DIR..."
+          
+          docker build -t $ECR_REGISTRY/$ECR_REPO_NAME:${{ matrix.service }}-$IMAGE_TAG $CONTEXT_DIR
+          docker push $ECR_REGISTRY/$ECR_REPO_NAME:${{ matrix.service }}-$IMAGE_TAG
+
+  deploy_to_eks:
+    name: Deploy to EKS
+    needs: build_and_push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Update Kubeconfig
+        run: aws eks --region ${{ secrets.AWS_REGION }} update-kubeconfig --name google-shop-cluster
+
+      - name: Deploy Manifests
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Loop through all yaml files in kubernetes-manifests
+          # Replace 'image: servicename' with 'image: ECR_URL/repo:servicename-TAG'
+          
+          for file in kubernetes-manifests/*.yaml; do
+            # Extract service name from filename (e.g., adservice.yaml -> adservice)
+            SERVICE_NAME=$(basename "$file" .yaml)
+            
+            # Skip non-service files like redis or loadgenerator if they don't match matrix
+            # Simple replacement logic:
+            # We look for "image: SERVICE_NAME" and replace it
+            
+            sed -i "s|image: $SERVICE_NAME|image: $ECR_REGISTRY/$ECR_REPO_NAME:$SERVICE_NAME-$IMAGE_TAG|g" "$file"
+          done
+          
+          # Apply the modified manifests
+          kubectl apply -f kubernetes-manifests/

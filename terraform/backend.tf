@@ -1,4 +1,4 @@
-/*terraform {
+terraform {
   backend "s3" {
     bucket         = "google-online-shop-terraform-state"
     key            = "google-online-shop/terraform.tfstate"
@@ -7,4 +7,3 @@
     dynamodb_table = "terraform-state-lock"
   }
 }
-*/
