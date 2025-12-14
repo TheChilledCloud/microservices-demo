@@ -1,4 +1,4 @@
-/*resource "aws_s3_bucket" "terraform_state" {
+resource "aws_s3_bucket" "terraform_state" {
   bucket = "google-online-shop-terraform-state"
   # Prevent accidental deletion of this S3 bucket
   lifecycle {
@@ -23,4 +23,3 @@ resource "aws_dynamodb_table" "terraform_locks" {
     type = "S"
   }
 }
-*/
