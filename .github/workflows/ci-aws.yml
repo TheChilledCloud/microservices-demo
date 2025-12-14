@@ -42,6 +42,7 @@ jobs:
     name: 'Build & Push (${{ matrix.service }})'
     needs: setup_infra
     runs-on: ubuntu-latest
+    environment: production
     strategy:
       fail-fast: false
       matrix:
@@ -99,6 +100,7 @@ jobs:
     name: Deploy to EKS
     needs: build_and_push
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - name: Checkout Code
