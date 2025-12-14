@@ -77,6 +77,8 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
+          $ECR_REPO_NAME: google-microservices-demo
+
         run: |
           # Define the Dockerfile directory. Most are directly in src/SERVICE
           # Exception: cartservice has Dockerfile in src/cartservice/src/Dockerfile
