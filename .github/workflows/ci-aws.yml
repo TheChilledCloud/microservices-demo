@@ -126,6 +126,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
+          ECR_REPO_NAME: google-microservices-demo
         run: |
           # Loop through all yaml files in kubernetes-manifests
           # Replace 'image: servicename' with 'image: ECR_URL/repo:servicename-TAG'
