@@ -1,3 +1,42 @@
+# Google Online Boutique - AWS EKS Deployment 🚀
+
+Production-grade deployment of Google's microservices demo on AWS using Kubernetes, Terraform, and CI/CD automation.
+
+## Cloud Architecture
+
+This project deploys an enterprise-ready Kubernetes infrastructure on AWS using Infrastructure as Code (IaC).
+
+![Architecture Diagram](./docs/architecture-eks.png)
+
+### Key Features
+- **Microservices:** 11 polyglot services (Go, Python, Java, Node.js, C#) on EKS.
+- **High Availability:** Multi-AZ node groups with auto-scaling.
+- **Container Registry:** Private ECR repositories for all microservices.
+- **IaC:** 100% defined in Terraform (VPC, EKS, ECR, IAM, Node Groups).
+- **CI/CD:** GitHub Actions pipeline for automated image builds & deployments.
+- **State Management:** Remote S3 backend with DynamoDB locking.
+- **Monitoring:** Prometheus & Grafana stack deployed via Helm.
+
+---
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| **Container Orchestration** | Amazon EKS (Kubernetes 1.28+) |
+| **Infrastructure** | Terraform |
+| **CI/CD** | GitHub Actions |
+| **Container Registry** | Amazon ECR |
+| **Networking** | VPC (Public/Private Subnets, NAT Gateway) |
+| **Monitoring** | Prometheus + Grafana |
+
+---
+
+## Quick Deploy
+
+**Prerequisites:** AWS account, Terraform, kubectl, AWS CLI
+
+
 <!-- <p align="center">
 <img src="/src/frontend/static/icons/Hipster_HeroLogoMaroon.svg" width="300" alt="Online Boutique" />
 </p> -->
