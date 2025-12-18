@@ -6,7 +6,7 @@ Production-grade deployment of Google's microservices demo on AWS using Kubernet
 
 This project deploys an enterprise-ready Kubernetes infrastructure on AWS using Infrastructure as Code (IaC).
 
-![Architecture Diagram](./docs/architecture-eks.png)
+![Architecture Diagram](./architecture-eks.png)
 
 ### Key Features
 - **Microservices:** 11 polyglot services (Go, Python, Java, Node.js, C#) on EKS.
